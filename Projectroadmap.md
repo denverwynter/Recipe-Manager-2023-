@@ -1,46 +1,44 @@
-conn.execute('''CREATE TABLE IF NOT EXISTS recipes
-             (ID INTEGER PRIMARY KEY AUTOINCREMENT,
-             NAME TEXT NOT NULL,
-             INGREDIENTS TEXT NOT NULL,
-             INSTRUCTIONS TEXT NOT NULL,
-             COOK_TIME INTEGER NOT NULL,
-             DIFFICULTY TEXT NOT NULL);''')
-
+import json
 def add_recipe():
+    # Prompt user for recipe details
     name = input("Enter recipe name: ")
-    ingredients = input("Enter ingredients separated by commas: ")
-    instructions = input("Enter instructions: ")
-    cook_time = int(input("Enter cook time (in minutes): "))
-    difficulty = input("Enter difficulty level: ")
-    conn.execute(f"INSERT INTO recipes (NAME, INGREDIENTS, INSTRUCTIONS, COOK_TIME, DIFFICULTY) \
-                   VALUES ('{name}', '{ingredients}', '{instructions}', {cook_time}, '{difficulty}');")
-    conn.commit()
-    print("Recipe added successfully!")
-
+    ingredients = input("Enter recipe ingredients (separated by commas): ")
+    directions = input("Enter recipe directions: ")
+    # Add recipe to recipe database
+    with open("recipes.json", "r") as f:
+        data = json.load(f)
+    data[name] = {"ingredients": ingredients.split(", "), "directions": directions}
+    with open("recipes.json", "w") as f:
+        json.dump(data, f)
 
 def search_recipe():
-    search_term = input("Enter search term: ")
-    query = f"SELECT * FROM recipes WHERE NAME LIKE '%{search_term}%' \
-             OR INGREDIENTS LIKE '%{search_term}%' \
-             OR INSTRUCTIONS LIKE '%{search_term}%' \
-             OR DIFFICULTY LIKE '%{search_term}%'"
-    result = conn.execute(query)
-    rows = result.fetchall()
-    if len(rows) == 0:
-        print("No recipes found.")
-    else:
-        for row in rows:
-                    print("ID:", row[0])
-            print("Name:", row[1])
-            print("Ingredients:", row[2])
-            print("Instructions:", row[3])
-            print("Cook Time:", row[4], "minutes")
-            print("Difficulty:", row[5])
-            print("")
+    # Prompt user for search term
+    term = input("Enter search term: ")
+    # Search recipe database for matching recipes
+    with open("recipes.json", "r") as f:
+        data = json.load(f)
+    for name, recipe in data.items():
+        if term in name or term in recipe["ingredients"] or term in recipe["directions"]:
+            print(f"Recipe: {name}")
+            print(f"Ingredients: {', '.join(recipe['ingredients'])}")
+            print(f"Directions: {recipe['directions']}")
+            print()
 
-def modify_recipe():
-    recipe_id = int(input("Enter recipe ID: "))
-    query = f"SELECT * FROM recipes WHERE ID = {recipe_id}"
-    result = conn.execute(query)
-    rows = result.fetchall()
-    if len(rows) == 0:
+def main():
+    while True:
+        print("Select an option:")
+        print("1. Add recipe")
+        print("2. Search recipe")
+        print("3. Quit")
+        choice = input("> ")
+        if choice == "1":
+            add_recipe()
+        elif choice == "2":
+            search_recipe()
+        elif choice == "3":
+            break
+        else:
+            print("Invalid choice.")
+
+if __name__ == "__main__":
+    main()
